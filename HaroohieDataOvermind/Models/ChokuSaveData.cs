@@ -23,8 +23,7 @@ public class ChokuSaveData
 
     public int TopicsObtained { get; set; }
 
-    public List<string> RoutesTaken { get; set; } = [];
-    public Dictionary<string, int> TimesAccompanyingCharacter { get; set; } = [];
+    public List<Route> RoutesTaken { get; set; } = [];
 
     // Ep 1
     public bool SawGameOverTutorial { get; set; }
@@ -130,8 +129,7 @@ public class ChokuSaveData
                 {
                     if (slot.IsFlagSet(route.Flag))
                     {
-                        RoutesTaken.Add(route.Name);
-                        UpdateTimesAccompanying(route);
+                        RoutesTaken.Add(route);
                         break;
                     }
                 }
@@ -140,21 +138,6 @@ public class ChokuSaveData
         catch
         {
             IsValid = false;
-        }
-    }
-
-    private void UpdateTimesAccompanying(Route route)
-    {
-        foreach (Character character in route.Characters)
-        {
-            if (TimesAccompanyingCharacter.ContainsKey(CharacterToLabel(character)))
-            {
-                TimesAccompanyingCharacter[CharacterToLabel(character)]++;
-            }
-            else
-            {
-                TimesAccompanyingCharacter.Add(CharacterToLabel(character), 1);
-            }
         }
     }
 
@@ -183,7 +166,7 @@ public class ChokuSaveData
         };
     }
 
-    private static readonly Route[][] Routes =
+    public static readonly Route[][] Routes =
     [
         [
             new(1022, "chokuretsu-wrapped-ep1-working-alone", [], Objective.A),
@@ -230,7 +213,7 @@ public class ChokuSaveData
             new(1064, "chokuretsu-wrapped-ep3-lottery-ticket", [Character.Koizumi], Objective.A),
             new(1065, "chokuretsu-wrapped-ep3-a-flower-in-each-hand-again", [Character.Mikuru, Character.Nagato], Objective.A),
             new(1066, "chokuretsu-wrapped-ep3-mikuru-and-the-stray-cat", [Character.Mikuru, Character.Koizumi], Objective.A),
-            new(1067, "chokuretsu-wrapped-ep3-the-shopkeepers-favorite", [Character.Nagato, Character.Koizumi], Objective.A),
+            new(1067, "chokuretsu-wrapped-ep3-the-shopkeepers-favor", [Character.Nagato, Character.Koizumi], Objective.A),
             new(1068, "chokuretsu-wrapped-ep3-buying-too-much", [Character.Mikuru, Character.Nagato, Character.Koizumi], Objective.A),
             new(1069, "chokuretsu-wrapped-ep3-haphazard", [Character.Haruhi], Objective.B),
             new(1070, "chokuretsu-wrapped-ep3-the-maid-is-a-slugger", [Character.Haruhi, Character.Mikuru], Objective.B),
@@ -295,7 +278,7 @@ public class ChokuSaveData
             new(1125, "chokuretsu-wrapped-ep5-working-in-solitude", [], Objective.B),
             new(1126, "chokuretsu-wrapped-ep5-near-miss", [Character.Mikuru], Objective.B),
             new(1127, "chokuretsu-wrapped-ep5-a-nearby-blind-spot", [Character.Koizumi], Objective.B),
-            new(1129, "chokuretsu-wrapped-ep5-straightfoward-duty", [], Objective.C),
+            new(1129, "chokuretsu-wrapped-ep5-straightforward-duty", [], Objective.C),
             new(1130, "chokuretsu-wrapped-ep5-state-of-emergency", [Character.Mikuru], Objective.C),
             new(1131, "chokuretsu-wrapped-ep5-two-options", [Character.Koizumi], Objective.C),
             new(1133, "chokuretsu-wrapped-ep5-trace-the-abnormality", [Character.Nagato], Objective.D),

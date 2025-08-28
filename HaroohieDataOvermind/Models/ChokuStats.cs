@@ -24,6 +24,9 @@ public class ChokuStats
     public double AverageTopicsObtained { get; set; }
     public Dictionary<string, int> TopicsObtainedChart { get; set; } = [];
 
+    public List<List<RouteAggregate>> RoutesTaken { get; set; } = [];
+    public int RoutesCountMax { get; set; }
+
     // Episode 1
     public Dictionary<string, int> SawGameOverTutorialChart { get; set; } = [];
     public Dictionary<string, int> Ep1ActivityGuessChart { get; set; } = [];
@@ -63,9 +66,14 @@ public class ChokuStats
             .ToDictionary(g => g.Key, g => g.Count());
         stats.NumCompSocMembersInterviewedChart = saves.GroupBy(s => s.NumCompSocMembersInterviewed)
             .ToDictionary(g => g.Key.ToString(), g => g.Count());
-        
-        
+
+        List<RouteAggregate> routes = saves.SelectMany(s => s.RoutesTaken).GroupBy(r => r)
+            .Select(r => new RouteAggregate(r.Key, r.Count())).ToList();
+        stats.RoutesTaken = ChokuSaveData.Routes.Select(rs => rs.Select(r => new RouteAggregate(r, routes.FirstOrDefault(ra => ra.Route.Name.Equals(r.Name))?.Count ?? 0)).ToList()).ToList();
+        stats.RoutesCountMax = stats.RoutesTaken.Max(rs => rs.Max(r => r.Count));
         
         await statsCol.InsertOneAsync(stats, new InsertOneOptions());
     }
 }
+
+public record RouteAggregate(Route Route, int Count);
