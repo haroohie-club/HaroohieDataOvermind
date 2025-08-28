@@ -24,6 +24,9 @@ public class ChokuSaveData
     public int TopicsObtained { get; set; }
 
     public List<Route> RoutesTaken { get; set; } = [];
+    public Dictionary<string, int> RoutesWithCharacter { get; set; } = [];
+
+    public int HaruhiMeter { get; set; }
 
     // Ep 1
     public bool SawGameOverTutorial { get; set; }
@@ -93,6 +96,27 @@ public class ChokuSaveData
                     TopicsObtained++;
                 }
             }
+
+            foreach (Route[] selection in Routes)
+            {
+                foreach (Route route in selection)
+                {
+                    if (slot.IsFlagSet(route.Flag))
+                    {
+                        RoutesTaken.Add(route);
+                        foreach (Character character in route.Characters)
+                        {
+                            if (!RoutesWithCharacter.TryAdd(CharacterToLabel(character), 1))
+                            {
+                                RoutesWithCharacter[CharacterToLabel(character)]++;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+
+            HaruhiMeter = (slot.HaruhiMeter + 1) * 10;
             
             // TR05 + !EV1_002 SEL001
             SawGameOverTutorial = slot.IsFlagSet(1016) && !slot.IsFlagSet(1196);
@@ -120,18 +144,6 @@ public class ChokuSaveData
                 if (slot.IsFlagSet(i))
                 {
                     NumCompSocMembersInterviewed++;
-                }
-            }
-
-            foreach (Route[] selection in Routes)
-            {
-                foreach (Route route in selection)
-                {
-                    if (slot.IsFlagSet(route.Flag))
-                    {
-                        RoutesTaken.Add(route);
-                        break;
-                    }
                 }
             }
         }

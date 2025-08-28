@@ -26,6 +26,9 @@ public class ChokuStats
 
     public List<List<RouteAggregate>> RoutesTaken { get; set; } = [];
     public int RoutesCountMax { get; set; }
+    public Dictionary<string, double> AverageRoutesWithCharacter { get; set; } = [];
+
+    public double AverageHaruhiMeter { get; set; }
 
     // Episode 1
     public Dictionary<string, int> SawGameOverTutorialChart { get; set; } = [];
@@ -56,6 +59,16 @@ public class ChokuStats
         stats.TopicsObtainedChart = saves.GroupBy(s => s.TopicsObtained)
             .ToDictionary(g => g.Key.ToString(), g => g.Count());
 
+        List<RouteAggregate> routes = saves.SelectMany(s => s.RoutesTaken).GroupBy(r => r)
+            .Select(r => new RouteAggregate(r.Key, r.Count())).ToList();
+        stats.RoutesTaken = ChokuSaveData.Routes.Select(rs => rs.Select(r => new RouteAggregate(r, routes.FirstOrDefault(ra => ra.Route.Name.Equals(r.Name))?.Count ?? 0)).ToList()).ToList();
+        stats.RoutesCountMax = stats.RoutesTaken.Max(rs => rs.Max(r => r.Count));
+        stats.AverageRoutesWithCharacter = saves[0].RoutesWithCharacter.ToDictionary(kv => kv.Key, kv => saves
+            .SelectMany(s => s.RoutesWithCharacter.Where(k => k.Key == kv.Key)
+                .Select(k => k.Value)).Average());
+        
+        stats.AverageHaruhiMeter = saves.Average(s => s.HaruhiMeter);
+
         int sawGameOverTutorial = saves.Count(s => s.SawGameOverTutorial);
         stats.SawGameOverTutorialChart = new()
         {
@@ -66,11 +79,6 @@ public class ChokuStats
             .ToDictionary(g => g.Key, g => g.Count());
         stats.NumCompSocMembersInterviewedChart = saves.GroupBy(s => s.NumCompSocMembersInterviewed)
             .ToDictionary(g => g.Key.ToString(), g => g.Count());
-
-        List<RouteAggregate> routes = saves.SelectMany(s => s.RoutesTaken).GroupBy(r => r)
-            .Select(r => new RouteAggregate(r.Key, r.Count())).ToList();
-        stats.RoutesTaken = ChokuSaveData.Routes.Select(rs => rs.Select(r => new RouteAggregate(r, routes.FirstOrDefault(ra => ra.Route.Name.Equals(r.Name))?.Count ?? 0)).ToList()).ToList();
-        stats.RoutesCountMax = stats.RoutesTaken.Max(rs => rs.Max(r => r.Count));
         
         await statsCol.InsertOneAsync(stats, new InsertOneOptions());
     }

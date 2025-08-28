@@ -50,6 +50,9 @@ public class Program
         {
             chokuDb.CreateCollection(ChokuStats.ChokuStatsCollectionName);
         }
+
+        Task.Run(() => ChokuStats.UpdateStats(chokuDb.GetCollection<ChokuSaveData>(ChokuSaveData.ChokuSaveCollectionName),
+            chokuDb.GetCollection<ChokuStats>(ChokuStats.ChokuStatsCollectionName)));
         
         RouteGroupBuilder chokuStatsApi = app.MapGroup("/choku-wrapped");
         chokuStatsApi.MapGet("/", () =>
