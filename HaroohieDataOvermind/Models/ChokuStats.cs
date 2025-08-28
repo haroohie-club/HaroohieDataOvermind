@@ -1,0 +1,71 @@
+using System.Globalization;
+using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Driver;
+
+namespace HaroohieDataOvermind.Models;
+
+
+public class ChokuStats
+{
+    public const string ChokuStatsCollectionName = "choku_wrapped";
+
+    [BsonId] public int Id { get; set; } = 0;
+    
+    public int NumSubmissions { get; set; }
+
+    public double HaruhiFriendshipLevel { get; set; }
+    public double MikuruFriendshipLevel { get; set; }
+    public double NagatoFriendshipLevel { get; set; }
+    public double KoizumiFriendshipLevel { get; set; }
+    public double TsuruyaFriendshipLevel { get; set; }
+
+    public Dictionary<string, int> EndingChart { get; set; } = [];
+
+    public double AverageTopicsObtained { get; set; }
+    public Dictionary<string, int> TopicsObtainedChart { get; set; } = [];
+
+    // Episode 1
+    public Dictionary<string, int> SawGameOverTutorialChart { get; set; } = [];
+    public Dictionary<string, int> Ep1ActivityGuessChart { get; set; } = [];
+    public Dictionary<string, int> NumCompSocMembersInterviewedChart { get; set; } = [];
+
+    public ChokuSaveData? SaveData { get; set; }
+
+    public static async Task UpdateStats(IMongoCollection<ChokuSaveData> saveCol, IMongoCollection<ChokuStats> statsCol)
+    {
+        List<ChokuSaveData> saves = await (await saveCol.FindAsync(Builders<ChokuSaveData>.Filter.Empty)).ToListAsync();
+        ChokuStats stats = await statsCol.FindOneAndDeleteAsync(Builders<ChokuStats>.Filter.Empty) ?? new();
+
+        stats.NumSubmissions = saves.Count;
+
+        ChokuSaveData[] friendSaves = saves.Where(s => s.HasFriendship).ToArray();
+        double friendSavesLength = friendSaves.Length == 0 ? 1 : friendSaves.Length;
+        stats.HaruhiFriendshipLevel = friendSaves.Sum(s => s.HaruhiFriendshipLevel) / friendSavesLength;
+        stats.MikuruFriendshipLevel = friendSaves.Sum(s => s.MikuruFriendshipLevel) / friendSavesLength;
+        stats.NagatoFriendshipLevel = friendSaves.Sum(s => s.NagatoFriendshipLevel) / friendSavesLength;
+        stats.KoizumiFriendshipLevel = friendSaves.Sum(s => s.KoizumiFriendshipLevel) / friendSavesLength;
+        stats.TsuruyaFriendshipLevel = friendSaves.Sum(s => s.TsuruyaFriendshipLevel) / friendSavesLength;
+
+        stats.EndingChart = saves.GroupBy(s => s.UnlockedEnding)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        stats.AverageTopicsObtained = saves.Average(s => s.TopicsObtained);
+        stats.TopicsObtainedChart = saves.GroupBy(s => s.TopicsObtained)
+            .ToDictionary(g => g.Key.ToString(), g => g.Count());
+
+        int sawGameOverTutorial = saves.Count(s => s.SawGameOverTutorial);
+        stats.SawGameOverTutorialChart = new()
+        {
+            { "chokuretsu-wrapped-game-over-saw", sawGameOverTutorial },
+            { "chokuretsu-wrapped-game-over-didnt-see", saves.Count - sawGameOverTutorial },
+        };
+        stats.Ep1ActivityGuessChart = saves.GroupBy(s => s.Ep1ActivityGuess)
+            .ToDictionary(g => g.Key, g => g.Count());
+        stats.NumCompSocMembersInterviewedChart = saves.GroupBy(s => s.NumCompSocMembersInterviewed)
+            .ToDictionary(g => g.Key.ToString(), g => g.Count());
+        
+        
+        
+        await statsCol.InsertOneAsync(stats, new InsertOneOptions());
+    }
+}

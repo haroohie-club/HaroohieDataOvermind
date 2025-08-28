@@ -1,43 +1,114 @@
+using System.Security;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
+using HaroohieDataOvermind.Models;
+using LiteDB;
+using MongoDB.Driver;
+using MongoDB.Driver.Core.Configuration;
 
 namespace HaroohieDataOvermind;
 
 public class Program
 {
+    private const string AllowOrigins = "_allowOrigins";
+    
     public static void Main(string[] args)
     {
-        var builder = WebApplication.CreateSlimBuilder(args);
+        WebApplicationBuilder builder = WebApplication.CreateSlimBuilder(args);
 
         builder.Services.ConfigureHttpJsonOptions(options =>
         {
             options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
         });
 
-        var app = builder.Build();
-
-        var sampleTodos = new Todo[]
+        builder.Services.AddCors(options =>
         {
-            new(1, "Walk the dog"),
-            new(2, "Do the dishes", DateOnly.FromDateTime(DateTime.Now)),
-            new(3, "Do the laundry", DateOnly.FromDateTime(DateTime.Now.AddDays(1))),
-            new(4, "Clean the bathroom"),
-            new(5, "Clean the car", DateOnly.FromDateTime(DateTime.Now.AddDays(2)))
-        };
+            options.AddPolicy(name: AllowOrigins,
+                policy =>
+                {
+                    policy.WithOrigins("https://*.haroohie.club", "http://localhost:3000") 
+                        .WithMethods("GET", "POST");
+                });
+        });
 
-        var todosApi = app.MapGroup("/todos");
-        todosApi.MapGet("/", () => sampleTodos);
-        todosApi.MapGet("/{id}", (int id) =>
-            sampleTodos.FirstOrDefault(a => a.Id == id) is { } todo
-                ? Results.Ok(todo)
-                : Results.NotFound());
+        WebApplication app = builder.Build();
+        app.UseCors(AllowOrigins);
+
+        MongoClientSettings clientSettings = new()
+        {
+            Scheme = ConnectionStringScheme.MongoDB, 
+            Server = new("localhost", 27017),
+        };
+        MongoClient mongo = new(clientSettings);
+        IMongoDatabase chokuDb = mongo.GetDatabase("chokuretsu");
+        if (chokuDb.GetCollection<ChokuSaveData>(ChokuSaveData.ChokuSaveCollectionName) is null)
+        {
+            chokuDb.CreateCollection(ChokuSaveData.ChokuSaveCollectionName);
+        }
+        if (chokuDb.GetCollection<ChokuStats>(ChokuStats.ChokuStatsCollectionName) is null)
+        {
+            chokuDb.CreateCollection(ChokuStats.ChokuStatsCollectionName);
+        }
+        
+        RouteGroupBuilder chokuStatsApi = app.MapGroup("/choku-wrapped");
+        chokuStatsApi.MapGet("/", () =>
+        {
+            IMongoCollection<ChokuStats> statsCol = chokuDb.GetCollection<ChokuStats>(ChokuStats.ChokuStatsCollectionName);
+            ChokuStats stats = statsCol.FindSync(Builders<ChokuStats>.Filter.Empty).FirstOrDefault() ?? new();
+            return Results.Ok(stats);
+        });
+        chokuStatsApi.MapGet("/{sha}", async (string sha) =>
+        {
+            ChokuSaveData? saveData = (await chokuDb.GetCollection<ChokuSaveData>(ChokuSaveData.ChokuSaveCollectionName)
+                .FindAsync(Builders<ChokuSaveData>.Filter.Eq("_id", sha))).FirstOrDefault();
+            if (saveData is null)
+            {
+                return Results.NotFound();
+            }
+            
+            IMongoCollection<ChokuStats> statsCol = chokuDb.GetCollection<ChokuStats>(ChokuStats.ChokuStatsCollectionName);
+            ChokuStats stats = statsCol.FindSync(Builders<ChokuStats>.Filter.Empty).FirstOrDefault() ?? new();
+            stats.SaveData = saveData;
+            return Results.Ok(stats);
+        });
+        chokuStatsApi.MapPost("/", async context =>
+        {
+            if (context.Request.Form.Files.Count < 1)
+            {
+                await context.Response.WriteAsync("ERR_NO_SAVE_DATA");
+            }
+            MemoryStream chokuDataStream = new();
+            await context.Request.Form.Files[0].CopyToAsync(chokuDataStream);
+            ChokuSaveData chokuData = new(chokuDataStream.ToArray());
+            if (chokuData.IsValid)
+            {
+                IMongoCollection<ChokuSaveData> saveDataCol = chokuDb.GetCollection<ChokuSaveData>(ChokuSaveData.ChokuSaveCollectionName);
+
+                if ((await saveDataCol.FindAsync(
+                        Builders<ChokuSaveData>.Filter.Eq("_id", chokuData.Sha256Hash)))
+                    .FirstOrDefault() is not null)
+                {
+                    await context.Response.WriteAsync(chokuData.Sha256Hash);
+                    return;
+                }
+                
+                IMongoCollection<ChokuStats> statsCol = chokuDb.GetCollection<ChokuStats>(ChokuStats.ChokuStatsCollectionName);
+                await saveDataCol.InsertOneAsync(chokuData, new InsertOneOptions());
+                await ChokuStats.UpdateStats(saveDataCol, statsCol);
+                
+                await context.Response.WriteAsync(chokuData.Sha256Hash);
+                return;
+            }
+            
+            await context.Response.WriteAsync("ERR_INVALID_SAVE");
+        });
 
         app.Run();
     }
 }
 
-public record Todo(int Id, string? Title, DateOnly? DueBy = null, bool IsComplete = false);
-
-[JsonSerializable(typeof(Todo[]))]
+[JsonSerializable(typeof(ChokuStats))]
 internal partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }
