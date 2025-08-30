@@ -34,19 +34,25 @@ public class ChokuSaveData
     public bool SawGameOverTutorial { get; set; }
     public string Ep1ActivityGuess { get; set; } = string.Empty;
     public int NumCompSocMembersInterviewed { get; set; }
-    
+    public string Ep1DidWhatWithMemoryCard { get; set; } = string.Empty;
+    public string Ep1Resolution { get; set; } = string.Empty;
+
     // Ep 2
-    public bool FoundTheSecretNote { get; set; }
+    public bool Ep2FoundTheSecretNote { get; set; }
+    public string Ep2Resolution { get; set; } = string.Empty;
 
     // Ep 3
-    public string WhoWalkedYouHome { get; set; } = string.Empty;
-    
+    public string Ep3WhoWalkedYouHome { get; set; } = string.Empty;
+    public string Ep3Resolution { get; set; } = string.Empty;
+
     // Ep 4
-    
+    public string Ep4AResolution { get; set; } = string.Empty;
+    public string Ep4BResolution { get; set; } = string.Empty;
+
     // Ep 5
-    public bool ClearedChessPuzzle { get; set; }
-    public bool DefeatedHaruhiInChess { get; set; }
-    public bool WhoWokeYouUp { get; set; }
+    public bool Ep5ClearedChessPuzzle { get; set; }
+    public bool Ep5DefeatedHaruhiInChess { get; set; }
+    public bool Ep5WhoWokeYouUp { get; set; }
 
     public ChokuSaveData(byte[] data)
     {
@@ -159,6 +165,33 @@ public class ChokuSaveData
                     NumCompSocMembersInterviewed++;
                 }
             }
+            
+            // EV1_003 SEL003, EV1_006 SEL003, EV1_008 SEL005, EV1_009 SEL006, EV1_010 SEL006
+            if (slot.IsFlagSet(1204) || slot.IsFlagSet(1237) || slot.IsFlagSet(1264) || slot.IsFlagSet(1277) ||
+                slot.IsFlagSet(1289))
+            {
+                Ep1DidWhatWithMemoryCard = Ep1MemoryCardActions[0];
+            }
+            // EV1_003 SEL004, EV1_006 SEL004, EV1_008 SEL006, EV1_009 SEL005, EV1_010 SEL007
+            else if (slot.IsFlagSet(1205) || slot.IsFlagSet(1238) || slot.IsFlagSet(1265) || slot.IsFlagSet(1276) ||
+                     slot.IsFlagSet(1290))
+            {
+                Ep1DidWhatWithMemoryCard = Ep1MemoryCardActions[1];
+            }
+            else
+            {
+                Ep1DidWhatWithMemoryCard = Ep1MemoryCardActions[2];
+            }
+            
+            // EV1_026, EV1_027, EV1_028, or EV1_029
+            for (int i = 0; i < 4; i++)
+            {
+                if (slot.IsFlagSet(1393 + i * 3))
+                {
+                    Ep1Resolution = Ep1Resolutions[i];
+                    break;
+                }
+            }
         }
         catch
         {
@@ -170,7 +203,22 @@ public class ChokuSaveData
     [
         "chokuretsu-wrapped-ep1-go-swimming",
         "chokuretsu-wrapped-ep1-go-camping",
-        "chokuretsu-wrapped-ep1-summer-camp"
+        "chokuretsu-wrapped-ep1-summer-camp",
+    ];
+
+    public static readonly string[] Ep1MemoryCardActions =
+    [
+        "chokuretsu-wrapped-ep1-took-memory-card",
+        "chokuretsu-wrapped-ep1-returned-memory-card",
+        "chokuretsu-wrapped-ep1-didnt-find-memory-card",
+    ];
+
+    public static readonly string[] Ep1Resolutions =
+    [
+        "chokuretsu-wrapped-ep1-h2o",
+        "chokuretsu-wrapped-ep1-swapped-plates",
+        "chokuretsu-wrapped-ep1-off-by-h2o-plates",
+        "chokuretsu-wrapped-ep1-a-misunderstanding",
     ];
 
     public static string EndingToLabel(Ending ending)
@@ -373,7 +421,6 @@ public class ChokuSaveData
         new(150, "chokuretsu-wrapped-topic-spot", 5, TopicType.Main),
         new(154, "chokuretsu-wrapped-topic-moths-and-flames", 5, TopicType.Main),
         new(155, "chokuretsu-wrapped-topic-reflection", 5, TopicType.Main),
-        new(191, "chokuretsu-wrapped-topic-main-30", 0, TopicType.Main),
         new(202, "chokuretsu-wrapped-topic-haruhi-and-kyon", 1, TopicType.Haruhi),
         new(203, "chokuretsu-wrapped-topic-sos-brigade-chief", 1, TopicType.Haruhi),
         new(204, "chokuretsu-wrapped-topic-alpha-wolf", 1, TopicType.Haruhi),
@@ -607,7 +654,7 @@ public class ChokuSaveData
         new(560, "chokuretsu-wrapped-topic-koizumi's-“it's-up-to-you!”", 4, TopicType.Koizumi),
         new(561, "chokuretsu-wrapped-topic-harsh-koizumi", 4, TopicType.Koizumi),
         new(562, "chokuretsu-wrapped-topic-embarrassing-photo", 4, TopicType.Koizumi),
-        new(563, "chokuretsu-wrapped-topic-koizumi's-hypothesis", 4, TopicType.Koizumi),
+        new(563, "chokuretsu-wrapped-topic-koizumi's-supposition", 4, TopicType.Koizumi),
         new(564, "chokuretsu-wrapped-topic-koizumi's-gutsiness", 4, TopicType.Koizumi),
         new(565, "chokuretsu-wrapped-topic-koizumi's-nod", 4, TopicType.Koizumi),
         new(566, "chokuretsu-wrapped-topic-icy-stare", 4, TopicType.Koizumi),

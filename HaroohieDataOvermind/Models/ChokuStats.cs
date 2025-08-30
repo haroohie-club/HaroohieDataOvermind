@@ -36,6 +36,8 @@ public class ChokuStats
     public Dictionary<string, int> SawGameOverTutorialChart { get; set; } = [];
     public Dictionary<string, int> Ep1ActivityGuessChart { get; set; } = [];
     public Dictionary<string, int> NumCompSocMembersInterviewedChart { get; set; } = [];
+    public Dictionary<string, int> Ep1MemoryCardChart { get; set; } = [];
+    public Dictionary<string, int> Ep1ResolutionChart { get; set; } = [];
 
     public ChokuSaveData? SaveData { get; set; }
 
@@ -69,8 +71,8 @@ public class ChokuStats
         stats.TopicsObtained = ChokuSaveData.Topics.Select(t =>
             new TopicAggregate(t, topics.FirstOrDefault(ta => ta.Topic.Flag == t.Flag)?.Count ?? 0)).ToList();
 
-        List<RouteAggregate> routes = saves.SelectMany(s => s.RoutesTaken).GroupBy(r => r)
-            .Select(r => new RouteAggregate(r.Key, r.Count())).ToList();
+        List<RouteAggregate> routes = saves.SelectMany(s => s.RoutesTaken).GroupBy(r => r.Flag)
+            .Select(r => new RouteAggregate(r.First(), r.Count())).ToList();
         stats.RoutesTaken = ChokuSaveData.Routes.Select(rs => rs.Select(r => new RouteAggregate(r, routes.FirstOrDefault(ra => ra.Route.Name.Equals(r.Name))?.Count ?? 0)).ToList()).ToList();
         stats.RoutesCountMax = stats.RoutesTaken.Max(rs => rs.Max(r => r.Count));
         stats.AverageRoutesWithCharacter = Enum.GetValues<Character>().Select(ChokuSaveData.CharacterToLabel).ToDictionary(c => c, c => saves
@@ -96,6 +98,18 @@ public class ChokuStats
         }
         stats.NumCompSocMembersInterviewedChart = saves.GroupBy(s => s.NumCompSocMembersInterviewed)
             .ToDictionary(g => g.Key.ToString(), g => g.Count());
+        stats.Ep1MemoryCardChart = saves.GroupBy(s => s.Ep1DidWhatWithMemoryCard)
+            .ToDictionary(g => g.Key, g => g.Count());
+        foreach (string ep1MemoryCardAction in ChokuSaveData.Ep1MemoryCardActions)
+        {
+            stats.Ep1MemoryCardChart.TryAdd(ep1MemoryCardAction, 0);
+        }
+        stats.Ep1ResolutionChart = saves.GroupBy(s => s.Ep1Resolution)
+            .ToDictionary(g => g.Key, g => g.Count());
+        foreach (string ep1Resolution in ChokuSaveData.Ep1Resolutions)
+        {
+            stats.Ep1ResolutionChart.TryAdd(ep1Resolution, 0);
+        }
         
         await statsCol.InsertOneAsync(stats, new InsertOneOptions());
     }
