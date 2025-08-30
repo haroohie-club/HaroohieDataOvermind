@@ -16,6 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="AWSSDK.S3" Version="4.0.6.12" />
       <PackageReference Include="HaruhiChokuretsuLib" Version="0.55.0" />
       <PackageReference Include="MongoDB.Driver" Version="3.4.3" />
     </ItemGroup>

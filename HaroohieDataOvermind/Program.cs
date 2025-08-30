@@ -1,9 +1,8 @@
-using System.Security;
-using System.Text.Json;
+using System.Text;
 using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
+using Amazon.S3;
+using Amazon.S3.Model;
 using HaroohieDataOvermind.Models;
-using LiteDB;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Configuration;
 
@@ -12,6 +11,10 @@ namespace HaroohieDataOvermind;
 public class Program
 {
     private const string AllowOrigins = "_allowOrigins";
+    private const string SpacesUrlEnv = "SPACES_URL";
+    private const string SpacesKeyEnv = "SPACES_KEY";
+    private const string SpacesSecretEnv = "SPACES_SECRET";
+    private const string SpacesNameEnv = "SPACES_NAME";
     
     public static void Main(string[] args)
     {
@@ -77,11 +80,11 @@ public class Program
         });
         chokuStatsApi.MapPost("/", async context =>
         {
-            if (context.Request.Form.Files.Count < 1)
+            if (context.Request.Form.Files.Count < 1 || context.Request.Form.Files[0].Length != 8192)
             {
-                await context.Response.WriteAsync("ERR_NO_SAVE_DATA");
+                await context.Response.WriteAsync("ERR_NOT_A_SAVE_FILE");
             }
-            MemoryStream chokuDataStream = new();
+            using MemoryStream chokuDataStream = new();
             await context.Request.Form.Files[0].CopyToAsync(chokuDataStream);
             ChokuSaveData chokuData = new(chokuDataStream.ToArray());
             if (chokuData.IsValid)
@@ -101,10 +104,74 @@ public class Program
                 await ChokuStats.UpdateStats(saveDataCol, statsCol);
                 
                 await context.Response.WriteAsync(chokuData.Sha256Hash);
+
+                chokuDataStream.Seek(0, SeekOrigin.Begin);
+                AmazonS3Config config = new() { ServiceURL = Environment.GetEnvironmentVariable(SpacesUrlEnv) };
+                AmazonS3Client client = new(Environment.GetEnvironmentVariable(SpacesKeyEnv),
+                    Environment.GetEnvironmentVariable(SpacesSecretEnv), config);
+                PutObjectRequest saveRequest = new()
+                {
+                    BucketName = Environment.GetEnvironmentVariable(SpacesNameEnv),
+                    Key = $"saves/chokuretsu/{chokuData.Sha256Hash}.sav",
+                    InputStream = chokuDataStream,
+                };
+                await client.PutObjectAsync(saveRequest);
+                
                 return;
             }
             
             await context.Response.WriteAsync("ERR_INVALID_SAVE");
+        });
+        chokuStatsApi.MapPost("/refresh", async context =>
+        {
+            string? pass = Environment.GetEnvironmentVariable("REFRESH_PASS");
+            if (string.IsNullOrEmpty(pass))
+            {
+                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                await context.Response.WriteAsync("Server has no password!");
+                return;
+            }
+
+            var providedPass = new byte[pass.Length];
+            await context.Request.Body.ReadExactlyAsync(providedPass);
+            if (!Encoding.ASCII.GetString(providedPass).Equals(pass))
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await context.Response.WriteAsync("Incorrect password!");
+                return;
+            }
+            context.Response.StatusCode = StatusCodes.Status200OK;
+            await context.Response.WriteAsync("OK");
+            
+            IMongoCollection<ChokuStats> statsCol = chokuDb.GetCollection<ChokuStats>(ChokuStats.ChokuStatsCollectionName);
+            IMongoCollection<ChokuSaveData> saveDataCol = chokuDb.GetCollection<ChokuSaveData>(ChokuSaveData.ChokuSaveCollectionName);
+            await saveDataCol.DeleteManyAsync(Builders<ChokuSaveData>.Filter.Empty);
+            
+            AmazonS3Config config = new() { ServiceURL = Environment.GetEnvironmentVariable(SpacesUrlEnv) };
+            AmazonS3Client client = new(Environment.GetEnvironmentVariable(SpacesKeyEnv),
+                Environment.GetEnvironmentVariable(SpacesSecretEnv), config);
+            ListObjectsRequest listRequest = new()
+            {
+                BucketName = Environment.GetEnvironmentVariable(SpacesNameEnv),
+                Prefix = "saves/chokuretsu/",
+            };
+            ListObjectsResponse listResponse = await client.ListObjectsAsync(listRequest);
+            foreach (S3Object file in listResponse.S3Objects)
+            {
+                GetObjectRequest getRequest = new()
+                {
+                    BucketName = Environment.GetEnvironmentVariable(SpacesNameEnv),
+                    Key = file.Key,
+                };
+                GetObjectResponse getResponse = await client.GetObjectAsync(getRequest);
+                using MemoryStream saveDataStream = new();
+                await getResponse.ResponseStream.CopyToAsync(saveDataStream);
+                
+                ChokuSaveData chokuData = new(saveDataStream.ToArray());
+                await saveDataCol.InsertOneAsync(chokuData, new InsertOneOptions());
+            }
+            
+            await ChokuStats.UpdateStats(saveDataCol, statsCol);
         });
 
         app.Run();

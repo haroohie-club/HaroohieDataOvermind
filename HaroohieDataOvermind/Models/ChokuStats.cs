@@ -27,6 +27,7 @@ public class ChokuStats
     public List<List<RouteAggregate>> RoutesTaken { get; set; } = [];
     public int RoutesCountMax { get; set; }
     public Dictionary<string, double> AverageRoutesWithCharacter { get; set; } = [];
+    public Dictionary<string, double> AverageRoutesWithSideCharacter { get; set; } = [];
 
     public double AverageHaruhiMeter { get; set; }
 
@@ -54,6 +55,10 @@ public class ChokuStats
 
         stats.EndingChart = saves.GroupBy(s => s.UnlockedEnding)
             .ToDictionary(g => g.Key, g => g.Count());
+        foreach (Ending ending in Enum.GetValues<Ending>())
+        {
+            stats.EndingChart.TryAdd(ChokuSaveData.EndingToLabel(ending), 0);
+        }
 
         stats.AverageTopicsObtained = saves.Average(s => s.TopicsObtained);
         stats.TopicsObtainedChart = saves.GroupBy(s => s.TopicsObtained)
@@ -63,8 +68,11 @@ public class ChokuStats
             .Select(r => new RouteAggregate(r.Key, r.Count())).ToList();
         stats.RoutesTaken = ChokuSaveData.Routes.Select(rs => rs.Select(r => new RouteAggregate(r, routes.FirstOrDefault(ra => ra.Route.Name.Equals(r.Name))?.Count ?? 0)).ToList()).ToList();
         stats.RoutesCountMax = stats.RoutesTaken.Max(rs => rs.Max(r => r.Count));
-        stats.AverageRoutesWithCharacter = saves[0].RoutesWithCharacter.ToDictionary(kv => kv.Key, kv => saves
-            .SelectMany(s => s.RoutesWithCharacter.Where(k => k.Key == kv.Key)
+        stats.AverageRoutesWithCharacter = Enum.GetValues<Character>().Select(ChokuSaveData.CharacterToLabel).ToDictionary(c => c, c => saves
+            .SelectMany(s => s.RoutesWithCharacter.Where(k => k.Key == c)
+                .Select(k => k.Value)).Average());
+        stats.AverageRoutesWithSideCharacter = Enum.GetValues<SideCharacter>().Select(ChokuSaveData.SideCharacterToLabel).ToDictionary(c => c, c => saves
+            .SelectMany(s => s.RoutesWithSideCharacter.Where(k => k.Key == c)
                 .Select(k => k.Value)).Average());
         
         stats.AverageHaruhiMeter = saves.Average(s => s.HaruhiMeter);
@@ -77,6 +85,10 @@ public class ChokuStats
         };
         stats.Ep1ActivityGuessChart = saves.GroupBy(s => s.Ep1ActivityGuess)
             .ToDictionary(g => g.Key, g => g.Count());
+        foreach (string ep1Activity in ChokuSaveData.Ep1ActivityGuesses)
+        {
+            stats.Ep1ActivityGuessChart.TryAdd(ep1Activity, 0);
+        }
         stats.NumCompSocMembersInterviewedChart = saves.GroupBy(s => s.NumCompSocMembersInterviewed)
             .ToDictionary(g => g.Key.ToString(), g => g.Count());
         
