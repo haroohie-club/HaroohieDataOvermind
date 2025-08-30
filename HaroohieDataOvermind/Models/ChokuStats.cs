@@ -23,6 +23,7 @@ public class ChokuStats
 
     public double AverageTopicsObtained { get; set; }
     public Dictionary<string, int> TopicsObtainedChart { get; set; } = [];
+    public List<TopicAggregate> TopicsObtained { get; set; } = [];
 
     public List<List<RouteAggregate>> RoutesTaken { get; set; } = [];
     public int RoutesCountMax { get; set; }
@@ -60,9 +61,13 @@ public class ChokuStats
             stats.EndingChart.TryAdd(ChokuSaveData.EndingToLabel(ending), 0);
         }
 
-        stats.AverageTopicsObtained = saves.Average(s => s.TopicsObtained);
-        stats.TopicsObtainedChart = saves.GroupBy(s => s.TopicsObtained)
+        stats.AverageTopicsObtained = saves.Average(s => s.NumTopicsObtained);
+        stats.TopicsObtainedChart = saves.GroupBy(s => s.NumTopicsObtained)
             .ToDictionary(g => g.Key.ToString(), g => g.Count());
+        List<TopicAggregate> topics = saves.SelectMany(s => s.TopicsObtained).GroupBy(t => t)
+            .Select(t => new TopicAggregate(t.Key, t.Count())).ToList();
+        stats.TopicsObtained = ChokuSaveData.Topics.Select(t =>
+            new TopicAggregate(t, topics.FirstOrDefault(ta => ta.Topic.Flag == t.Flag)?.Count ?? 0)).ToList();
 
         List<RouteAggregate> routes = saves.SelectMany(s => s.RoutesTaken).GroupBy(r => r)
             .Select(r => new RouteAggregate(r.Key, r.Count())).ToList();
@@ -97,3 +102,4 @@ public class ChokuStats
 }
 
 public record RouteAggregate(Route Route, int Count);
+public record TopicAggregate(Topic Topic, int Count);
