@@ -16,10 +16,9 @@ RUN dotnet build "./HaroohieDataOvermind.csproj" -c $BUILD_CONFIGURATION -o /app
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN apt update && apt install -y clang zlib1g-dev
-RUN dotnet publish "./HaroohieDataOvermind.csproj" -c $BUILD_CONFIGURATION -o /app/publish
+RUN dotnet publish "./HaroohieDataOvermind.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["./HaroohieDataOvermind"]
+ENTRYPOINT ["dotnet", "HaroohieDataOvermind.dll"]
