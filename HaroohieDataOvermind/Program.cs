@@ -31,7 +31,7 @@ public class Program
             options.AddPolicy(name: AllowOrigins,
                 policy =>
                 {
-                    policy.WithOrigins("https://*.haroohie.club") 
+                    policy.WithOrigins("https://haroohie.club", "https://*.haroohie.club") 
                         .WithMethods("GET", "POST");
                 });
         });
