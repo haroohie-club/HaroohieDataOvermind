@@ -39,11 +39,6 @@ public class Program
         WebApplication app = builder.Build();
         app.UseCors(AllowOrigins);
         
-        if (!app.Environment.IsDevelopment())
-        {
-            app.UseHttpsRedirection();
-        }
-        
         app.UseForwardedHeaders(new()
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
