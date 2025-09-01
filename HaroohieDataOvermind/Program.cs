@@ -44,7 +44,6 @@ public class Program
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
 
-
         MongoClientSettings clientSettings = new()
         {
             Scheme = ConnectionStringScheme.MongoDB, 
