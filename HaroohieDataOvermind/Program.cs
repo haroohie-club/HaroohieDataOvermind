@@ -30,7 +30,7 @@ public class Program
             options.AddPolicy(name: AllowOrigins,
                 policy =>
                 {
-                    policy.WithOrigins("https://*.haroohie.club", "http://localhost:3000") 
+                    policy.WithOrigins("https://*.haroohie.club") 
                         .WithMethods("GET", "POST");
                 });
         });
@@ -41,7 +41,7 @@ public class Program
         MongoClientSettings clientSettings = new()
         {
             Scheme = ConnectionStringScheme.MongoDB, 
-            Server = new("localhost", 27017),
+            Server = new(Environment.GetEnvironmentVariable("MONGO_HOST"), 27017),
         };
         MongoClient mongo = new(clientSettings);
         IMongoDatabase chokuDb = mongo.GetDatabase("chokuretsu");
