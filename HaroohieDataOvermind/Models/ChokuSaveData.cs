@@ -46,6 +46,7 @@ public class ChokuSaveData
     public string Ep3Resolution { get; set; } = string.Empty;
 
     // Ep 4
+    public string Ep4MysteryGirlInteraction { get; set; } = string.Empty;
     public string Ep4AResolution { get; set; } = string.Empty;
     public string Ep4BResolution { get; set; } = string.Empty;
 
@@ -192,6 +193,19 @@ public class ChokuSaveData
                     break;
                 }
             }
+            
+            // EV2_024 HIT01 completed
+            Ep2FoundTheSecretNote = slot.IsFlagSet(1619);
+            
+            // EV2_027, EV2_028, or EV2_029
+            for (int i = 0; i < 3; i++)
+            {
+                if (slot.IsFlagSet(1635 + i * 3))
+                {
+                    Ep2Resolution = Ep2Resolutions[i];
+                    break;
+                }
+            }
         }
         catch
         {
@@ -219,6 +233,13 @@ public class ChokuSaveData
         "chokuretsu-wrapped-ep1-swapped-plates",
         "chokuretsu-wrapped-ep1-off-by-h2o-plates",
         "chokuretsu-wrapped-ep1-a-misunderstanding",
+    ];
+
+    public static readonly string[] Ep2Resolutions =
+    [
+        "chokuretsu-wrapped-ep2-the-music-box",
+        "chokuretsu-wrapped-ep2-the-light-music-club",
+        "chokuretsu-wrapped-ep2-just-tsuruya",
     ];
 
     public static string EndingToLabel(Ending ending)

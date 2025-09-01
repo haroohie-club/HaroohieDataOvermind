@@ -38,6 +38,10 @@ public class ChokuStats
     public Dictionary<string, int> NumCompSocMembersInterviewedChart { get; set; } = [];
     public Dictionary<string, int> Ep1MemoryCardChart { get; set; } = [];
     public Dictionary<string, int> Ep1ResolutionChart { get; set; } = [];
+    
+    // Episode 2
+    public Dictionary<string, int> Ep2FoundTheSecretNoteChart { get; set; } = [];
+    public Dictionary<string, int> Ep2ResolutionChart { get; set; } = [];
 
     public ChokuSaveData? SaveData { get; set; }
 
@@ -109,6 +113,19 @@ public class ChokuStats
         foreach (string ep1Resolution in ChokuSaveData.Ep1Resolutions)
         {
             stats.Ep1ResolutionChart.TryAdd(ep1Resolution, 0);
+        }
+
+        int foundTheSecretNote = saves.Count(s => s.Ep2FoundTheSecretNote);
+        stats.Ep2FoundTheSecretNoteChart = new()
+        {
+            { "chokuretsu-wrapped-ep2-found-the-note", foundTheSecretNote },
+            { "chokuretsu-wrapped-ep2-didnt-find-the-note", saves.Count - foundTheSecretNote },
+        };
+        stats.Ep2ResolutionChart = saves.GroupBy(s => s.Ep2Resolution)
+            .ToDictionary(g => g.Key, g => g.Count());
+        foreach (string ep2Resolution in ChokuSaveData.Ep2Resolutions)
+        {
+            stats.Ep2ResolutionChart.TryAdd(ep2Resolution, 0);
         }
         
         await statsCol.InsertOneAsync(stats, new InsertOneOptions());
