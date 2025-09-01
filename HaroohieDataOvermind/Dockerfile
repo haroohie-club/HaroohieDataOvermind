@@ -16,7 +16,7 @@ RUN dotnet build "./HaroohieDataOvermind.csproj" -c $BUILD_CONFIGURATION -o /app
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN apt update && apt install -y clang
+RUN apt update && apt install -y clang zlib1g-dev
 RUN dotnet publish "./HaroohieDataOvermind.csproj" -c $BUILD_CONFIGURATION -o /app/publish
 
 FROM base AS final
