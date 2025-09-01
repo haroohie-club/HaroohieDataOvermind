@@ -30,7 +30,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_NAME }}
+          images: ghcr.io/haroohie-club/dataovermind
           labels: |
             org.opencontainers.image.authors=Haroohie Translation Club
             org.opencontainers.image.vendor=Haroohie Translation Club
