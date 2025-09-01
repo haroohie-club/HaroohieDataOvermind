@@ -30,7 +30,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: IMAGE_NAME
+          images: ${{ env.IMAGE_NAME }}
           labels: |
             org.opencontainers.image.authors=Haroohie Translation Club
             org.opencontainers.image.vendor=Haroohie Translation Club
