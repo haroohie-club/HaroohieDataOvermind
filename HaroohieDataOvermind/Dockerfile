@@ -22,4 +22,4 @@ RUN dotnet publish "./HaroohieDataOvermind.csproj" -c $BUILD_CONFIGURATION -o /a
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "HaroohieDataOvermind.dll"]
+ENTRYPOINT ["./HaroohieDataOvermind"]
