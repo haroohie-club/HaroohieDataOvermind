@@ -42,6 +42,19 @@ public class ChokuStats
     // Episode 2
     public Dictionary<string, int> Ep2FoundTheSecretNoteChart { get; set; } = [];
     public Dictionary<string, int> Ep2ResolutionChart { get; set; } = [];
+    
+    // Episode 3
+    public Dictionary<string, int> Ep3WalkedHomeChart { get; set; } = [];
+    public Dictionary<string, int> Ep3ResolutionChart { get; set; } = [];
+    
+    // Episode 4
+    public Dictionary<string, int> Ep4AResolutionChart { get; set; } = [];
+    public Dictionary<string, int> Ep4BResolutionChart { get; set; } = [];
+    
+    // Episode 5
+    public Dictionary<string, int> Ep5ChessPuzzleResultChart { get; set; } = [];
+    public Dictionary<string, int> Ep5ChessTourneyWinnerChart { get; set; } = [];
+    public Dictionary<string, int> Ep5WhoWokeYouUpChart { get; set; } = [];
 
     public ChokuSaveData? SaveData { get; set; }
 
@@ -126,6 +139,49 @@ public class ChokuStats
         foreach (string ep2Resolution in ChokuSaveData.Ep2Resolutions)
         {
             stats.Ep2ResolutionChart.TryAdd(ep2Resolution, 0);
+        }
+        
+        stats.Ep3WalkedHomeChart = saves.GroupBy(s => s.Ep3WhoWalkedYouHome)
+            .ToDictionary(g => g.Key, g => g.Count());
+        foreach (string ep2Resolution in ChokuSaveData.Ep3WalksHome)
+        {
+            stats.Ep3WalkedHomeChart.TryAdd(ep2Resolution, 0);
+        }
+        stats.Ep3ResolutionChart = saves.GroupBy(s => s.Ep3Resolution)
+            .ToDictionary(g => g.Key, g => g.Count());
+        stats.Ep3ResolutionChart.TryAdd("chokuretsu-wrapped-ep3-aogeba-toutoshi-dj", 0);
+        stats.Ep3ResolutionChart.TryAdd("chokuretsu-wrapped-ep3-mock-graduation-ceremony", 0);
+        
+        stats.Ep4AResolutionChart = saves.GroupBy(s => s.Ep4AResolution)
+            .ToDictionary(g => g.Key, g => g.Count());
+        foreach (string ep4AResolution in ChokuSaveData.Ep4AResolutions)
+        {
+            stats.Ep4AResolutionChart.TryAdd(ep4AResolution, 0);
+        }
+        stats.Ep4BResolutionChart = saves.GroupBy(s => s.Ep4BResolution)
+            .ToDictionary(g => g.Key, g => g.Count());
+        foreach (string ep4BResolution in ChokuSaveData.Ep4BResolutions)
+        {
+            stats.Ep4BResolutionChart.TryAdd(ep4BResolution, 0);
+        }
+        
+        stats.Ep5ChessPuzzleResultChart = saves.GroupBy(s => s.Ep5ChessPuzzleResult)
+            .ToDictionary(g => g.Key, g => g.Count());
+        foreach (string ep5ChessPuzzleResult in ChokuSaveData.Ep5ChessPuzzleResults)
+        {
+            stats.Ep5ChessPuzzleResultChart.TryAdd(ep5ChessPuzzleResult, 0);
+        }
+        stats.Ep5ChessTourneyWinnerChart = saves.GroupBy(s => s.Ep5ChessTourneyWinner)
+            .ToDictionary(g => g.Key, g => g.Count());
+        foreach (string ep5ChessTourneyWinners in ChokuSaveData.Ep5ChessTourneyWinners)
+        {
+            stats.Ep5ChessTourneyWinnerChart.TryAdd(ep5ChessTourneyWinners, 0);
+        }
+        stats.Ep5WhoWokeYouUpChart = saves.GroupBy(s => s.Ep5WhoWokeYouUp)
+            .ToDictionary(g => g.Key, g => g.Count());
+        foreach (string ep5ChessTourneyWinners in ChokuSaveData.Ep5WakeUps)
+        {
+            stats.Ep5WhoWokeYouUpChart.TryAdd(ep5ChessTourneyWinners, 0);
         }
         
         await statsCol.InsertOneAsync(stats, new InsertOneOptions());

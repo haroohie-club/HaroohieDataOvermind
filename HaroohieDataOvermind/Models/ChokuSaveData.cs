@@ -51,9 +51,9 @@ public class ChokuSaveData
     public string Ep4BResolution { get; set; } = string.Empty;
 
     // Ep 5
-    public bool Ep5ClearedChessPuzzle { get; set; }
-    public bool Ep5DefeatedHaruhiInChess { get; set; }
-    public bool Ep5WhoWokeYouUp { get; set; }
+    public string Ep5ChessPuzzleResult { get; set; } = string.Empty;
+    public string Ep5ChessTourneyWinner { get; set; } = string.Empty;
+    public string Ep5WhoWokeYouUp { get; set; } = string.Empty;
 
     public ChokuSaveData(byte[] data)
     {
@@ -206,6 +206,67 @@ public class ChokuSaveData
                     break;
                 }
             }
+            
+            // EV3_029 walk home character selection
+            for (int i = 0; i < 5; i++)
+            {
+                if (slot.IsFlagSet(1947 + i))
+                {
+                    Ep3WhoWalkedYouHome = Ep3WalksHome[i];
+                    break;
+                }
+            }
+            
+            // EV3_031 section jumps for resolution
+            Ep3Resolution = slot.IsFlagSet(1976) ? "chokuretsu-wrapped-ep3-aogeba-toutoshi-dj" : "chokuretsu-wrapped-ep3-mock-graduation-ceremony";
+            
+            // EV4_015
+            Ep4AResolution = slot.IsFlagSet(2142) ? Ep4AResolutions[0] : Ep4AResolutions[1];
+            
+            // EV4_043
+            Ep4BResolution = slot.IsFlagSet(2408) ? Ep4BResolutions[1] : Ep4BResolutions[0];
+            
+            // EV5_027, EV5_028, EV5_029, EV5_030 "CHSLOS" sections
+            if (slot.IsFlagSet(2638) || slot.IsFlagSet(2646) || slot.IsFlagSet(2657) || slot.IsFlagSet(2665))
+            {
+                Ep5ChessPuzzleResult = Ep5ChessPuzzleResults[1];
+            }
+            // CHSWIN sections
+            else if (slot.IsFlagSet(2639) || slot.IsFlagSet(2647) || slot.IsFlagSet(2658) || slot.IsFlagSet(2666))
+            {
+                Ep5ChessPuzzleResult = Ep5ChessPuzzleResults[0];
+            }
+            else
+            {
+                Ep5ChessPuzzleResult = Ep5ChessPuzzleResults[2];
+            }
+            
+            // EV5_027 SEL003, EV5_028, EV5_029
+            if (slot.IsFlagSet(2640) || slot.IsFlagSet(2653) || slot.IsFlagSet(2661))
+            {
+                Ep5ChessTourneyWinner = Ep5ChessTourneyWinners[0];
+            }
+            else if (slot.IsFlagSet(2641))
+            {
+                Ep5ChessTourneyWinner = Ep5ChessTourneyWinners[1];
+            }
+            else if (slot.IsFlagSet(2669))
+            {
+                Ep5ChessTourneyWinner = Ep5ChessTourneyWinners[2];
+            }
+            else
+            {
+                Ep5ChessTourneyWinner = Ep5ChessTourneyWinners[3];
+            }
+
+            for (int i = 0; i < 3; i++)
+            {
+                if (slot.IsFlagSet(2604 + i))
+                {
+                    Ep5WhoWokeYouUp = Ep5WakeUps[i];
+                    break;
+                }
+            }
         }
         catch
         {
@@ -240,6 +301,49 @@ public class ChokuSaveData
         "chokuretsu-wrapped-ep2-the-music-box",
         "chokuretsu-wrapped-ep2-the-light-music-club",
         "chokuretsu-wrapped-ep2-just-tsuruya",
+    ];
+
+    public static readonly string[] Ep3WalksHome =
+    [
+        "chokuretsu-wrapped-haruhi",
+        "chokuretsu-wrapped-mikuru",
+        "chokuretsu-wrapped-nagato",
+        "chokuretsu-wrapped-koizumi",
+        "chokuretsu-wrapped-hitoribocchi",
+    ];
+
+    public static readonly string[] Ep4AResolutions =
+    [
+        "chokuretsu-wrapped-ep4a-a-flashlight",
+        "chokuretsu-wrapped-ep4a-she-forgor",
+    ];
+
+    public static readonly string[] Ep4BResolutions =
+    [
+        "chokuretsu-wrapped-ep4b-nagatos-plan",
+        "chokuretsu-wrapped-ep4b-running-interference",
+    ];
+
+    public static readonly string[] Ep5ChessPuzzleResults =
+    [
+        "chokuretsu-wrapped-ep5-chess-puzzle-cleared",
+        "chokuretsu-wrapped-ep5-chess-puzzle-failed",
+        "chokuretsu-wrapped-ep5-chess-puzzle-na",
+    ];
+
+    public static readonly string[] Ep5ChessTourneyWinners =
+    [
+        "chokuretsu-wrapped-ep5-chess-tourney-haruhi",
+        "chokuretsu-wrapped-ep5-chess-tourney-kyon",
+        "chokuretsu-wrapped-ep5-chess-tourney-deferred",
+        "chokuretsu-wrapped-ep5-chess-tourney-na",
+    ];
+
+    public static readonly string[] Ep5WakeUps =
+    [
+        "chokuretsu-wrapped-nagato",
+        "chokuretsu-wrapped-mikuru",
+        "chokuretsu-wrapped-koizumi",
     ];
 
     public static string EndingToLabel(Ending ending)
