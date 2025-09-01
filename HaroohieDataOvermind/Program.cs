@@ -52,7 +52,7 @@ public class Program
         MongoClientSettings clientSettings = new()
         {
             Scheme = ConnectionStringScheme.MongoDB, 
-            Server = new(Environment.GetEnvironmentVariable("MONGO_HOST"), 27017),
+            Server = new(Environment.GetEnvironmentVariable("MONGO_HOST")),
         };
         MongoClient mongo = new(clientSettings);
         IMongoDatabase chokuDb = mongo.GetDatabase("chokuretsu");
