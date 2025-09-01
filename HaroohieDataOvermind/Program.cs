@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Amazon.S3;
 using Amazon.S3.Model;
 using HaroohieDataOvermind.Models;
+using Microsoft.AspNetCore.HttpOverrides;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Configuration;
 
@@ -37,6 +38,17 @@ public class Program
 
         WebApplication app = builder.Build();
         app.UseCors(AllowOrigins);
+        
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseHttpsRedirection();
+        }
+        
+        app.UseForwardedHeaders(new()
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        });
+
 
         MongoClientSettings clientSettings = new()
         {
