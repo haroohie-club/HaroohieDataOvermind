@@ -36,6 +36,11 @@ public class Program
                 });
         });
 
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        });
+
         WebApplication app = builder.Build();
         app.UseCors(AllowOrigins);
         
