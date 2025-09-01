@@ -38,6 +38,8 @@ public class Program
         WebApplication app = builder.Build();
         app.UseCors(AllowOrigins);
 
+        app.UseHttpsRedirection();
+
         MongoClientSettings clientSettings = new()
         {
             Scheme = ConnectionStringScheme.MongoDB, 
